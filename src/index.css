@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.navbar {
+    position: relative; 
+    z-index: 1000; 
+  }
+  
