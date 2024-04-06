@@ -1,23 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { auth } from '../firebase-config';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useTheme } from '../ThemeContext';
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const detailsRef = useRef(null); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => setIsLoggedIn(!!user));
-    // Return the unsubscribe function to ensure the listener is removed on component unmount
     return () => unsubscribe();
   }, []);
 
-  const { setTheme } = useTheme();
-
-  // Function to handle theme change
-  const handleThemeChange = (theme) => {
-    setTheme(theme);
+  const closeDropdown = () => {
+    if (detailsRef.current) {
+      detailsRef.current.open = false; // Manually close the dropdown
+    }
   };
 
   return (
@@ -36,21 +34,25 @@ const Navbar = () => {
         <div className="flex-none">
           <ul className="menu menu-horizontal px-5 mr-7">
           <li>
-              <details>
+              <details ref={detailsRef}>
                 <summary>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
                   </svg>
                 </summary>
                 <ul className="p-2 bg-base-100 rounded-t-none">
-                  <li><Link to="/" className="btn btn-ghost p-4">Home</Link></li>
-                  <li><Link to="/history" className="btn btn-ghost p-4">History</Link></li>
-                  <li><Link to="/settings" className="btn btn-ghost p-4">Settings</Link></li>
-                  <li><button onClick={() => signOut(auth)} className="btn btn-warning p-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
-                      </svg>
-                    </button></li>
+                <li><div onClick={closeDropdown}><Link to="/" className="btn btn-ghost p-4">Home</Link></div></li>
+                  <li><div onClick={closeDropdown}><Link to="/history" className="btn btn-ghost p-4">History</Link></div></li>
+                  <li><div onClick={closeDropdown}><Link to="/settings" className="btn btn-ghost p-4">Settings</Link></div></li>
+                  <li>
+                    <div onClick={closeDropdown}>
+                      <button onClick={() => signOut(auth)} className="btn btn-warning p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15M12 9l3 3m0 0-3 3m3-3H2.25" />
+                        </svg>
+                      </button>
+                    </div>
+                  </li>
                 </ul>
               </details>
             </li>

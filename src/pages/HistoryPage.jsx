@@ -17,22 +17,39 @@ const HistoryPage = () => {
     const db = getDatabase();
     const userId = auth.currentUser ? auth.currentUser.uid : 'anonymous';
     const periodsRef = ref(db, `buttonPresses/${userId}/periods`);
-
+  
     onValue(periodsRef, (snapshot) => {
       const data = snapshot.val() || {};
       const allPeriods = generateTwoWeekPeriods();
-      const formattedData = allPeriods.reduce((acc, period) => {
+      let formattedData = allPeriods.reduce((acc, period) => {
         const periodKey = format(period.start, 'yyyy-MM-dd') + "_to_" + format(period.end, 'yyyy-MM-dd');
-        acc[periodKey] = (data[periodKey] && data[periodKey].entries) ? Object.entries(data[periodKey].entries).map(([key, entry]) => ({
-          key,
-          timestamp: format(parseISO(entry.timestamp), 'EEE MMM dd HH:mm:ss'),
-        })) : [];
+        let entries = [];
+        if (data[periodKey] && data[periodKey].entries) {
+          entries = Object.entries(data[periodKey].entries)
+            .map(([key, entry]) => ({
+              key,
+              timestamp: entry.timestamp,
+              formattedTimestamp: format(parseISO(entry.timestamp), 'EEE MMM dd HH:mm:ss'),
+            }))
+            .sort((a, b) => parseISO(b.timestamp) - parseISO(a.timestamp)); // Sort entries within a period
+        }
+        acc[periodKey] = entries;
         return acc;
       }, {});
-
+  
+      // Sort the periods by the start date in descending order
+      formattedData = Object.entries(formattedData)
+        .sort((a, b) => {
+          const startDateA = parseISO(a[0].split('_to_')[0]);
+          const startDateB = parseISO(b[0].split('_to_')[0]);
+          return startDateB - startDateA;
+        })
+        .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
+  
       setPeriodsData(formattedData);
     });
   }, []);
+  
 
   const addEntryManually = () => {
     const db = getDatabase();
@@ -48,8 +65,8 @@ const HistoryPage = () => {
       timestamp: dateTime.toISOString(),
     });
     document.getElementById('addEntryModal').close();
-    setDateToAdd('')
-    setTimeToAdd('')
+    setDateToAdd('');
+    setTimeToAdd('');
   };
 
   const deleteEntry = (periodKey, entryKey) => {
@@ -94,7 +111,6 @@ const HistoryPage = () => {
       <div className="overflow-x-auto">
         <table className="table w-full">
           {Object.entries(periodsData).map(([period, entries]) => {
-            // Only render periods with entries
             if (entries.length > 0) {
               return (
                 <React.Fragment key={period}>
@@ -102,9 +118,9 @@ const HistoryPage = () => {
                     <tr><th className="text-lg font-bold p-4" colSpan="2">{formatPeriod(period)}</th></tr>
                   </thead>
                   <tbody>
-                    {entries.map((entry, index) => (
-                      <tr key={index}>
-                        <td className="text-center">{entry.timestamp}</td>
+                    {entries.map((entry) => (
+                      <tr key={entry.key}>
+                        <td className="text-center">{entry.formattedTimestamp}</td>
                         <td>
                           <button className="btn btn-xs btn-error" onClick={() => deleteEntry(period, entry.key)}>Delete</button>
                         </td>
